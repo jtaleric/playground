@@ -1,6 +1,22 @@
+"""
+Copyright 2017 Joe Talerico
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 import yaml
 import pprint
 import datetime
+import re
 from Elastic import *
 
 INDEX_DATA=True
@@ -9,6 +25,10 @@ es = Elastic('')
 
 schedule = None
 qdata = {}
+
+RH_STORAGE = r"6048|720"
+storage_nodes = []
+general_nodes = []
 
 with open('schedule.yaml', 'r') as schedule_file :
     try :
@@ -65,6 +85,11 @@ if INDEX_DATA :
         obj = { 'cloud': key }
         if type(value) is dict :
             for date in value :
+                for host in value[date]['hosts']:
+                    if re.match(RH_STORAGE,host) :
+                       storage_nodes.append(host)
+                    else:
+                        general_nodes.append(host)
                 obj['date'] = datetime.datetime.strptime(date,'%Y-%m-%d %H:%M:%S').isoformat()
                 obj['cc'] = value[date]['cc']
                 obj['owner'] = value[date]['owner']
@@ -72,8 +97,8 @@ if INDEX_DATA :
                 obj['hosts'] = value[date]['hosts']
                 obj['ticket'] = value[date]['ticket']
                 obj['num_hosts'] = len(value[date]['hosts'])
-                obj['start_time'] = value[date]['start']
-                obj['end_time'] = value[date]['end']
+                obj['start_time'] = datetime.datetime.strptime(value[date]['start'],'%Y-%m-%d %H:%M:%S').isoformat()
+                obj['end_time'] = datetime.datetime.strptime(value[date]['end'],'%Y-%m-%d %H:%M:%S').isoformat()
 
                 if len(obj['hosts']) > 0 :
                     es.index(obj,'quads-history','history')
