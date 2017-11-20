@@ -26,6 +26,7 @@ es = Elastic('')
 schedule = None
 qdata = {}
 
+# Regex to capture storage nodes
 RH_STORAGE = r"6048|720"
 storage_nodes = []
 general_nodes = []
